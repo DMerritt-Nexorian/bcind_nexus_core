@@ -1,5 +1,3 @@
-Here is a clean, production-grade README.md tailored specifically for the unified, single-tier codebase you just built.
-Save this in your repository root: bcind_nexus_core/README.md.
 BCIND Nexus-Core Kernel
 Non-Invasive Brain-Computer Interface Neural Decoder (BCIND)
 Hardware-Bound Deterministic Software Governance Engine & Biophysical Signal Processor
