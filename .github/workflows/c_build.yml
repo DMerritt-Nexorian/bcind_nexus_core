@@ -1,0 +1,17 @@
+name: C Safety Engine Test
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Compile C Safety Test
+        run: gcc -Wall -Wextra src/test_safety.c -o test_runner
+
+      - name: Run Safety Verification
+        run: ./test_runner
