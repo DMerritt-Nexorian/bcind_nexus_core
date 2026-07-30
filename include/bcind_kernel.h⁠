@@ -14,14 +14,7 @@
 #define SAMPLING_FREQ 1000
 #define MAX_CONTACT_IMPEDANCE_KOHM 150.0
 #define MIN_VIABLE_SNR_DB -10.0
-#define SYSTEM_VERSION "1.0.0-PROD"
-
-typedef enum {
-    TIER_FREE = 0,
-    TIER_DEVELOPER = 1,
-    TIER_COMMERCIAL = 2,
-    TIER_ENTERPRISE = 3
-} LicenseTier;
+#define SYSTEM_VERSION "1.0.0-UNIFIED"
 
 typedef struct {
     double channel_impedance_kohm[CHANNELS];
@@ -39,7 +32,7 @@ typedef struct {
     uint64_t audit_sequence;
 } GovernanceState;
 
-// Function Declarations
+// Core Engine Declarations
 bool check_law_envelope(const TelemetryFrame* frame, const char* jurisdiction);
 bool evaluate_admissibility(TelemetryFrame* frame);
 bool verify_immutable_core(void);
@@ -48,6 +41,5 @@ bool ceal_enforce_policy(TelemetryFrame* frame, GovernanceState* state);
 int load_governance_state(GovernanceState* state, const char* filepath);
 int save_governance_state(const GovernanceState* state, const char* filepath);
 void log_audit_event(const char* filepath, const char* action, const char* status, double snr_db, uint64_t seq);
-bool validate_license(LicenseTier tier, const char* hwid);
 
 #endif
