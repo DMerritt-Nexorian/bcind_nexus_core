@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "bcind_kernel.h"
+#include "include/bcind_kernel.h"
 
 int main() {
     printf("=========================================\n");
