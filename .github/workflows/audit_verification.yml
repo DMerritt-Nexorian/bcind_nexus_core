@@ -20,17 +20,26 @@ jobs:
 
       - name: Verify Documentation Presence
         run: |
-          test -f README.md || (echo "README.md missing" && false)
-          test -f AUDIT_REPORT.md || (echo "AUDIT_REPORT.md missing" && false)
-          test -f COMPLIANCE.md || (echo "COMPLIANCE.md missing" && false)
-          test -f CONTRIBUTING.md || (echo "CONTRIBUTING.md missing" && false)
-          test -f TECHNICAL_SPEC.md || (echo "TECHNICAL_SPEC.md missing" && false)
-          test -f OPENBCI_INTEGRATION.md || (echo "OPENBCI_INTEGRATION.md missing" && false)
+          for file in README.md AUDIT_REPORT.md COMPLIANCE.md CONTRIBUTING.md TECHNICAL_SPEC.md OPENBCI_INTEGRATION.md; do
+            if [ ! -f "$file" ]; then
+              echo "::error::Required compliance document $file is missing!"
+              exit 1
+            fi
+          done
           echo "All compliance documentation is present."
 
       - name: Run Core Kernel Execution
         run: |
           cargo run --release -- --impedance 45.0 --signal 12.5 --noise 25.0
-          test -f config/governance_state.json || (echo "Governance state file not created" && false)
-          test -f audit_export.json || (echo "Audit export log not created" && false)
+
+          if [ ! -f "config/governance_state.json" ]; then
+            echo "::error::Governance state file is missing!"
+            exit 1
+          fi
+
+          if [ ! -f "audit_export.json" ]; then
+            echo "::error::Audit export log is missing!"
+            exit 1
+          fi
+
           echo "Core kernel ran successfully with expected compliance JSON files generated."

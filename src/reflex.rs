@@ -1,7 +1,7 @@
 pub fn execute_reflex_action(reason: &str) {
-    eprintln!("\n========================================================");
-    eprintln!("   CRITICAL FAIL-SAFE REFLEX ACTION TRIGGERED");
-    eprintln!(
+    log::error!("\n========================================================");
+    log::error!("   CRITICAL FAIL-SAFE REFLEX ACTION TRIGGERED");
+    log::error!(
         "   Reason: {}",
         if reason.is_empty() {
             "Unspecified System Boundary Fault"
@@ -9,6 +9,6 @@ pub fn execute_reflex_action(reason: &str) {
             reason
         }
     );
-    eprintln!("   Status: Pipeline Latched / Output Terminated");
-    eprintln!("========================================================\n");
+    log::error!("   Status: Pipeline Latched / Output Terminated");
+    log::error!("========================================================\n");
 }

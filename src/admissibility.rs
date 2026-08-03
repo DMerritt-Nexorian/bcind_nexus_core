@@ -21,9 +21,10 @@ pub fn evaluate_admissibility(frame: &mut TelemetryFrame) -> bool {
     }
 
     if frame.current_snr_db < MIN_VIABLE_SNR_DB {
-        eprintln!(
+        log::error!(
             "[ADMISSIBILITY] Gate Rejected: SNR {:.2} dB below threshold {:.2} dB.",
-            frame.current_snr_db, MIN_VIABLE_SNR_DB
+            frame.current_snr_db,
+            MIN_VIABLE_SNR_DB
         );
         false
     } else {

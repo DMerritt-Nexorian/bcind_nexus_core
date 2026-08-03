@@ -30,6 +30,9 @@ fn print_usage(prog: &str) {
 }
 
 fn main() {
+    // Initialize structured logging with a default level of info if not overridden
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
     let args: Vec<String> = env::args().collect();
     let prog = &args[0];
 
@@ -109,10 +112,10 @@ fn main() {
         }
     }
 
-    println!("========================================================");
-    println!("   BCIND NEXUS-GENESIS KERNEL v{}", SYSTEM_VERSION);
-    println!("   Non-Invasive Brain-Computer Interface Neural Decoder");
-    println!("========================================================\n");
+    log::info!("========================================================");
+    log::info!("   BCIND NEXUS-GENESIS KERNEL v{}", SYSTEM_VERSION);
+    log::info!("   Non-Invasive Brain-Computer Interface Neural Decoder");
+    log::info!("========================================================\n");
 
     if !verify_immutable_core() {
         execute_reflex_action("Immutable Core Integrity Check Failed");
@@ -122,9 +125,10 @@ fn main() {
     let mut gov_state = match load_governance_state(&config_path) {
         Ok(state) => state,
         Err(e) => {
-            eprintln!(
+            log::error!(
                 "[ERROR] Failed to load or create governance state at {}: {}",
-                config_path, e
+                config_path,
+                e
             );
             process::exit(1);
         }
@@ -142,9 +146,10 @@ fn main() {
         current_snr_db: 0.0,
     };
 
-    println!(
+    log::info!(
         "[INIT] System state loaded. Sequence: {} | Jurisdiction: {}",
-        gov_state.audit_sequence, gov_state.jurisdiction
+        gov_state.audit_sequence,
+        gov_state.jurisdiction
     );
 
     if !ceal_enforce_policy(&frame, &gov_state) {
@@ -182,19 +187,21 @@ fn main() {
         process::exit(1);
     }
 
-    println!("[SUCCESS] Telemetry frame admissible!");
-    println!(
+    log::info!("[SUCCESS] Telemetry frame admissible!");
+    log::info!(
         "          Calculated SNR: {:.2} dB | Contact Impedance: {:.2} kOhm",
-        frame.current_snr_db, input_impedance
+        frame.current_snr_db,
+        input_impedance
     );
 
     gov_state.audit_sequence += 1;
     if let Err(e) = save_governance_state(&gov_state, &config_path) {
-        eprintln!("[ERROR] Failed to save governance state: {}", e);
+        log::error!("[ERROR] Failed to save governance state: {}", e);
     } else {
-        println!(
+        log::info!(
             "[STATE] Persisted sequence {} to {}",
-            gov_state.audit_sequence, config_path
+            gov_state.audit_sequence,
+            config_path
         );
     }
 
