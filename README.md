@@ -5,43 +5,69 @@
 
 ---
 
-## System Overview
+## 1. System Overview
 
-The **BCIND Nexus-Core Kernel** is an institutional-grade runtime engine designed for high-density, 32-channel non-invasive neural decoding. It provides a hard-wired safety layer that validates electrode-scalp contact impedance, computes signal-to-noise ratio (SNR) thresholds in real time, and enforces international medical and hardware safety envelopes (ISO 13485, IEC 62304, DIN 3105) before permitting neural execution signals.
-
-The architecture is fully deterministic, persistent, and unencumbered by artificial paywalls or feature toggles.
+The **BCIND Nexus-Core Kernel** is a high-reliability runtime engine designed for high-density, 32-channel non-invasive neural decoding. Implemented in pure, memory-safe Rust, it provides a deterministic validation layer that monitors electrode-scalp contact impedance, evaluates real-time Signal-to-Noise Ratio (SNR) thresholds, and enforces international medical and hardware safety parameters (IEC 62304 Class C, ISO 13485) before allowing downstream command execution.
 
 ---
 
-## Key Features
+## 2. Architecture & Compliance Invariants
 
-* **32-Channel Biophysical Signal Processing:** Enforces 150.0 kΩ maximum contact impedance limits and a -10.0 dB minimum SNR admissibility gate.
-* **Contextual Enforcement & Admissibility Logic (CEAL):** Hard-wired state machine preventing unverified or non-compliant neural state transitions.
-* **Fail-Safe Reflex Containment:** Instantaneous execution latching and telemetry termination upon boundary breach or memory fault.
-* **Model-Based Design (MBD):** Integrated MATLAB simulation environment for state-space neural dynamics and Monte Carlo validation.
-* **Audit Persistence:** Append-only structured JSON telemetry and state logging for full regulatory compliance.
+* **32-Channel Biophysical Signal Processing:** Enforces a $150.0\text{ k}\Omega$ maximum contact impedance threshold and a $-10.0\text{ dB}$ minimum SNR admissibility threshold.
+* **Contextual Enforcement & Admissibility Logic (CEAL):** A deterministic, formal state machine preventing unauthorized or unverified state transitions.
+* **Fail-Safe Reflex Containment:** Immediate stream latching and output termination upon any boundary violation or hardware contact fault.
+* **Model-Based Design Port:** Re-engineered from legacy MATLAB prototypes into pure Rust for high-performance, predictable, and memory-safe compilation.
+* **Structured Auditing:** Generates tamper-evident, append-only structured JSON telemetry and state logging conforming to IEC 62304.
 
 ---
 
-## Directory Structure
+## 3. Directory Structure
 
 ```text
 bcind_nexus_core/
-├── Makefile                        # Multi-target build configuration
-├── README.md                       # Architecture & setup manual
+├── Cargo.toml                    # Rust package manifest & dependencies
+├── README.md                     # System technical documentation
+├── AUDIT_REPORT.md               # Regulatory safety and hazard analysis
+├── COMPLIANCE.md                 # Physical safety boundaries & compliance invariants
+├── CONTRIBUTING.md               # Developer style guide, lint policies & PR gates
+├── TECHNICAL_SPEC.md             # Signal processing DSP mathematical theory
+├── OPENBCI_INTEGRATION.md        # Hardware interfacing guide via LSL & Serial
 ├── config/
-│   └── governance_state.json       # Persistent governance & sequence state
-├── include/
-│   └── bcind_kernel.h              # Unified system header & structure definitions
-├── matlab/
-│   ├── mbd_verification_results.txt # Verified Monte Carlo test output log
-│   └── verify_bcind_mbd.m          # MATLAB state-space & Monte Carlo simulation
-└── src/
-    ├── admissibility_gate.c        # RMS SNR signal validation engine
-    ├── audit.c                     # Structured JSON audit log writer
-    ├── ceal.c                      # Contextual policy enforcement module
-    ├── governance.c                # JSON configuration state loader/saver
-    ├── immutable_core.c           # Memory integrity verification
-    ├── law_envelope.c              # Regulatory and impedance safety guardrails
-    ├── main.c                      # Entry point & CLI argument parser
-    └── reflex.c                    # Critical fail-safe containment logic
+│   └── governance_state.json     # Persistent governance state tracking
+├── src/
+│   ├── main.rs                   # Entry point and CLI argument parser
+│   ├── lib.rs                    # Module declarations
+│   ├── law_envelope.rs           # Channel impedance and jurisdiction guardrails
+│   ├── admissibility.rs          # Real-time RMS SNR gate validation
+│   ├── ceal.rs                   # Policy and state transition enforcer
+│   ├── governance.rs             # JSON configuration loader & state preservation
+│   ├── audit.rs                  # Structured JSON audit log formatter
+│   ├── dsp.rs                    # High-performance filters, CAR, & EEG spectral analysis
+│   └── immutable_core.rs         # Memory safety self-verification module
+└── tests/
+    └── mock_eeg_stream.rs        # Standalone verification signal generator and tests
+```
+
+---
+
+## 4. Build and Verification Instructions
+
+This repository is packed to allow building and testing with standard Rust toolchain commands.
+
+### Dependencies
+- Rust 1.70 or higher is required.
+
+### Build the Core Kernel
+```bash
+cargo build --release
+```
+
+### Run the Signal Verification Suite
+```bash
+cargo test
+```
+
+### Run the Kernel CLI
+```bash
+cargo run -- --impedance 45.0 --signal 12.5 --noise 25.0
+```

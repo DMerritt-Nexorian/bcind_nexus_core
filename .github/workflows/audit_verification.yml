@@ -1,0 +1,36 @@
+name: Regulatory Audit Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  audit_verification:
+    name: Audit & Compliance Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v3
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Verify Documentation Presence
+        run: |
+          test -f README.md || (echo "README.md missing" && false)
+          test -f AUDIT_REPORT.md || (echo "AUDIT_REPORT.md missing" && false)
+          test -f COMPLIANCE.md || (echo "COMPLIANCE.md missing" && false)
+          test -f CONTRIBUTING.md || (echo "CONTRIBUTING.md missing" && false)
+          test -f TECHNICAL_SPEC.md || (echo "TECHNICAL_SPEC.md missing" && false)
+          test -f OPENBCI_INTEGRATION.md || (echo "OPENBCI_INTEGRATION.md missing" && false)
+          echo "All compliance documentation is present."
+
+      - name: Run Core Kernel Execution
+        run: |
+          cargo run --release -- --impedance 45.0 --signal 12.5 --noise 25.0
+          test -f config/governance_state.json || (echo "Governance state file not created" && false)
+          test -f audit_export.json || (echo "Audit export log not created" && false)
+          echo "Core kernel ran successfully with expected compliance JSON files generated."
