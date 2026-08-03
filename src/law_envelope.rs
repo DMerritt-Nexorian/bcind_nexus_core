@@ -23,22 +23,25 @@ impl Default for TelemetryFrame {
 
 pub fn check_law_envelope(frame: &TelemetryFrame, jurisdiction: &str) -> bool {
     if !frame.hardware_contact_valid {
-        eprintln!("[LAW_ENVELOPE] Violation: Hardware contact flag reported invalid.");
+        log::error!("[LAW_ENVELOPE] Violation: Hardware contact flag reported invalid.");
         return false;
     }
 
     for i in 0..CHANNELS {
         if frame.channel_impedance_kohm[i] > MAX_CONTACT_IMPEDANCE_KOHM {
-            eprintln!(
+            log::error!(
                 "[LAW_ENVELOPE] Violation: Channel {} impedance ({:.2} kOhm) exceeds max limit ({:.2} kOhm).",
-                i, frame.channel_impedance_kohm[i], MAX_CONTACT_IMPEDANCE_KOHM
+                i,
+                frame.channel_impedance_kohm[i],
+                MAX_CONTACT_IMPEDANCE_KOHM
             );
             return false;
         }
         if frame.channel_impedance_kohm[i] <= 0.0 {
-            eprintln!(
+            log::error!(
                 "[LAW_ENVELOPE] Violation: Channel {} impedance ({:.2} kOhm) is non-physical.",
-                i, frame.channel_impedance_kohm[i]
+                i,
+                frame.channel_impedance_kohm[i]
             );
             return false;
         }
@@ -47,7 +50,7 @@ pub fn check_law_envelope(frame: &TelemetryFrame, jurisdiction: &str) -> bool {
     match jurisdiction {
         "ISO13485" | "IEC62304" | "DIN3105" => true,
         _ => {
-            eprintln!(
+            log::warn!(
                 "[LAW_ENVELOPE] Warning: Unknown jurisdiction '{}'. Defaulting to strict fail-closed policy.",
                 jurisdiction
             );

@@ -35,7 +35,7 @@ pub fn log_audit_event<P: AsRef<Path>>(
         }
         if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&filepath) {
             let _ = writeln!(file, "{}", serialized);
-            println!(
+            log::info!(
                 "[AUDIT] Event sequence {} appended to {}",
                 seq,
                 filepath.as_ref().display()
