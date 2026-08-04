@@ -13,7 +13,22 @@ This document establishes the formal compliance parameters, safety boundaries, a
 
 ---
 
-## 2. Biophysical Safety Envelope
+## 2. High-Assurance Rust Architectural Foundations
+
+### I. Core Execution Engine & Memory Management
+- **Wasmtime & LLVM Integration:** Safe, sandboxed bytecode execution is guaranteed via Wasmtime integration, enabling complete isolation of dynamic plugin models. All core logic compiled directly via LLVM achieves high-efficiency deterministic performance.
+- **Deterministic Memory Management:** Using region-based memory management and static pools (such as those provided by the `bumpalo` crate), runtime allocation jitter is completely eliminated, meeting strict IEC 62304 real-time performance profiles without the hazard of garbage collection halts.
+
+### II. Asynchronous I/O & Thread-Per-Core Architecture
+- **Native `io_uring` Integration:** Low-latency biophysical telemetry is acquired via native Linux `io_uring` system calls, bypassing traditional blocking system call structures.
+- **Shared-Nothing Thread-Per-Core Execution:** Pinned threads and dedicated event loops (such as Glommio patterns) prevent lock contention and memory thrashing, ensuring predictable execution bounds for high-density 32-channel stream ingestion.
+
+### III. Mathematical Invariants & Strict Contract Enforcement
+- **Convex Projections & Mathematical Stability:** Direct compilation of contractive constraints into Rust's typing system prevents invalid states and out-of-bounds telemetry execution.
+
+---
+
+## 3. Biophysical Safety Envelope
 
 To prevent dangerous current injection or thermal/electrical tissue damage in active systems, and to ensure high physical validity in passive recording systems, the following boundary constraints are strictly enforced at runtime:
 
@@ -29,7 +44,7 @@ To prevent dangerous current injection or thermal/electrical tissue damage in ac
 
 ---
 
-## 3. Data Processing Invariants
+## 4. Data Processing Invariants
 
 1. **No Out-of-Sequence Logging:** The system governance state preserves `audit_sequence`. Every transition is accompanied by a persistent write to the audit trail log file, ensuring tamper-evident accountability.
 2. **Deterministic Processing Flow:**

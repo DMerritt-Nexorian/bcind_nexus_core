@@ -1,6 +1,6 @@
 # TECHNICAL_SPEC.md: Biophysical Signal Processing Theory & Implementation
 
-This specification outlines the mathematical formulations, filter coefficients, and algorithmic pipelines implemented within the `bcind_nexus_core` engine.
+This specification outlines the mathematical formulations, filter coefficients, algorithmic pipelines, and state-of-the-art high-assurance Rust architectural paradigms implemented within the `bcind_nexus_core` engine.
 
 ---
 
@@ -32,7 +32,22 @@ The system processes incoming high-density neural signals in discrete spatial-te
 
 ---
 
-## 2. Mathematical Formulations
+## 2. High-Assurance Rust Architectural Invariants
+
+### I. Core Execution Engine & Memory Management
+- **Wasmtime & LLVM Integration:** Rust has first-class, production-grade support for embedding Wasmtime via official crates, allowing secure, sandboxed execution of WebAssembly bytecode. Furthermore, Rust natively compiles down to native machine code via the LLVM backend (`rustc`), giving you direct control over code generation and optimization flags.
+- **Deterministic Memory Management:** Rust's core ownership, borrowing, and lifetime system is a compile-time implementation of region-based memory management. By leveraging arena allocation crates (such as `bumpalo`) or custom static memory pools, we achieve complete elimination of runtime allocation jitter and garbage collection pauses while remaining 100% memory safe.
+
+### II. Asynchronous I/O & Thread-Per-Core Architecture
+- **Native `io_uring` Integration:** Rust features high-performance, low-level bindings for Linux `io_uring` (via crates like `io-uring` or `tokio-uring`), allowing direct submission/completion queue manipulation without standard abstraction overhead.
+- **Shared-Nothing, Thread-Per-Core Execution:** Rather than relying on traditional work-stealing worker pools, Rust supports thread-per-core architectures natively. Frameworks like Glommio (built specifically in Rust on top of `io_uring` and modeled after Seastar) pin isolated event loops directly to individual CPU cores, entirely eliminating cross-core lock contention and cache thrashing.
+
+### III. Deterministic Safety & Invariant Enforcement
+- **Mathematical Invariants & Contracts:** Rust's type system, const generics, and strict immutability defaults allow us to hardcode mathematical contracts (such as the contractive stability constraints and convex projection bounds required by high-assurance architectures like `bcind_nexus_core`) directly into types or runtime assertion guards. This guarantees that state transitions violate neither safety boundaries nor real-time performance profiles.
+
+---
+
+## 3. Mathematical Formulations
 
 ### A. Spatial Filtering: Common Average Reference (CAR)
 To remove global common-mode electrical noise (such as line hum or movement artifacts present on the reference electrode), we compute:

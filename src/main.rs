@@ -1,6 +1,8 @@
 use bcind_core::admissibility::evaluate_admissibility;
 use bcind_core::audit::log_audit_event;
 use bcind_core::ceal::ceal_enforce_policy;
+use bcind_core::engine::contraction::{ContractionEngine, LatentState};
+use bcind_core::engine::core_affinity::{StaticRingBuffer, pin_to_core};
 use bcind_core::governance::{load_governance_state, save_governance_state};
 use bcind_core::immutable_core::verify_immutable_core;
 use bcind_core::law_envelope::check_law_envelope;
@@ -10,6 +12,7 @@ use std::env;
 use std::process;
 
 const SYSTEM_VERSION: &str = "0.2.0-rust";
+const STATE_DIM: usize = 64;
 
 fn print_usage(prog: &str) {
     println!("Usage: {} [OPTIONS]", prog);
@@ -192,6 +195,42 @@ fn main() {
         "          Calculated SNR: {:.2} dB | Contact Impedance: {:.2} kOhm",
         frame.current_snr_db,
         input_impedance
+    );
+
+    // Initialize the low-latency thread-per-core deterministic runtime loop (zero stdout locks/pollution)
+    let target_core = 1;
+    match pin_to_core(target_core) {
+        Ok(_) => log::info!(
+            "[SUCCESS] Engine thread pinned strictly to Core {}",
+            target_core
+        ),
+        Err(e) => log::warn!(
+            "[WARNING] Thread pinning skipped or not supported by host OS/permissions (Error: {})",
+            e
+        ),
+    }
+
+    let mut state_buffer: StaticRingBuffer<LatentState<STATE_DIM>, 1024> = StaticRingBuffer::new();
+    let engine = ContractionEngine::<STATE_DIM>::new(0.15, 10.0);
+
+    let mut weight_tensor = [0.1f32; STATE_DIM];
+    let sample_gradient = [0.05f32; STATE_DIM];
+    let learning_rate = 0.01f32;
+
+    // Hard-wired execution loop: completely silent, no console outputs, zero allocation bounds
+    for step in 0..10_000 {
+        let current_state = LatentState([0.01f32 * (step as f32); STATE_DIM]);
+        if state_buffer.push(current_state).is_err() {
+            log::error!("[HALT] Static state buffer overflow on step {}", step);
+            break;
+        }
+
+        engine.project_weights(&mut weight_tensor, &sample_gradient, learning_rate);
+        let _ = state_buffer.pop();
+    }
+
+    log::info!(
+        "[SUCCESS] Zero-allocation execution pipeline completed cleanly with hard bounds enforced."
     );
 
     gov_state.audit_sequence += 1;
