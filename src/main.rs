@@ -206,7 +206,8 @@ fn main() {
             (0..1024)
                 .map(|n| {
                     let t = n as f64 / fs;
-                    let alpha = 8.0 * (2.0 * std::f64::consts::PI * 10.0 * t + ch as f64 * 0.1).sin();
+                    let alpha =
+                        8.0 * (2.0 * std::f64::consts::PI * 10.0 * t + ch as f64 * 0.1).sin();
                     let beta = 4.0 * (2.0 * std::f64::consts::PI * 20.0 * t).sin();
                     alpha + beta + (ch as f64 * 0.01)
                 })
@@ -239,7 +240,10 @@ fn main() {
     // Existing contraction / ring-buffer safety loop retained
     let target_core = 1;
     match pin_to_core(target_core) {
-        Ok(_) => log::info!("[SUCCESS] Engine thread pinned strictly to Core {}", target_core),
+        Ok(_) => log::info!(
+            "[SUCCESS] Engine thread pinned strictly to Core {}",
+            target_core
+        ),
         Err(e) => log::warn!(
             "[WARNING] Thread pinning skipped or not supported by host OS/permissions (Error: {})",
             e
