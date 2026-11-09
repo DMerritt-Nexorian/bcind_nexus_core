@@ -1,6 +1,8 @@
 use bcind_core::admissibility::evaluate_admissibility;
 use bcind_core::audit::log_audit_event;
 use bcind_core::ceal::ceal_enforce_policy;
+use bcind_core::decoder::decode_band_powers;
+use bcind_core::dsp::{apply_common_average_reference, compute_eeg_band_powers};
 use bcind_core::engine::contraction::{ContractionEngine, LatentState};
 use bcind_core::engine::core_affinity::{StaticRingBuffer, pin_to_core};
 use bcind_core::governance::{load_governance_state, save_governance_state};
@@ -11,7 +13,7 @@ use bcind_core::reflex::execute_reflex_action;
 use std::env;
 use std::process;
 
-const SYSTEM_VERSION: &str = "0.2.0-rust";
+const SYSTEM_VERSION: &str = "0.3.0-rust";
 const STATE_DIM: usize = 64;
 
 fn print_usage(prog: &str) {
@@ -33,7 +35,6 @@ fn print_usage(prog: &str) {
 }
 
 fn main() {
-    // Initialize structured logging with a default level of info if not overridden
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let args: Vec<String> = env::args().collect();
@@ -197,13 +198,48 @@ fn main() {
         input_impedance
     );
 
-    // Initialize the low-latency thread-per-core deterministic runtime loop (zero stdout locks/pollution)
+    // Real multi-channel mock processing path
+    log::info!("[PIPELINE] Running mock 32-channel spectral decode loop");
+    let fs = 250.0;
+    let mut mock_channels: Vec<Vec<f64>> = (0..CHANNELS)
+        .map(|ch| {
+            (0..1024)
+                .map(|n| {
+                    let t = n as f64 / fs;
+                    let alpha = 8.0 * (2.0 * std::f64::consts::PI * 10.0 * t + ch as f64 * 0.1).sin();
+                    let beta = 4.0 * (2.0 * std::f64::consts::PI * 20.0 * t).sin();
+                    alpha + beta + (ch as f64 * 0.01)
+                })
+                .collect()
+        })
+        .collect();
+
+    // Apply CAR across channels at each sample (simplified: process one window)
+    let mut window: Vec<f64> = vec![0.0; 1024];
+    for n in 0..1024 {
+        let mut sample = [0.0; CHANNELS];
+        for ch in 0..CHANNELS {
+            sample[ch] = mock_channels[ch][n];
+        }
+        let car = apply_common_average_reference(&sample);
+        // Use channel 0 after CAR as representative for spectral analysis
+        window[n] = car[0];
+    }
+
+    let bands = compute_eeg_band_powers(&window, fs);
+    let control = decode_band_powers(&bands);
+
+    log::info!(
+        "[DECODE] continuous={:.3} direction={:?} confidence={:.2}",
+        control.continuous,
+        control.direction,
+        control.confidence
+    );
+
+    // Existing contraction / ring-buffer safety loop retained
     let target_core = 1;
     match pin_to_core(target_core) {
-        Ok(_) => log::info!(
-            "[SUCCESS] Engine thread pinned strictly to Core {}",
-            target_core
-        ),
+        Ok(_) => log::info!("[SUCCESS] Engine thread pinned strictly to Core {}", target_core),
         Err(e) => log::warn!(
             "[WARNING] Thread pinning skipped or not supported by host OS/permissions (Error: {})",
             e
@@ -217,21 +253,17 @@ fn main() {
     let sample_gradient = [0.05f32; STATE_DIM];
     let learning_rate = 0.01f32;
 
-    // Hard-wired execution loop: completely silent, no console outputs, zero allocation bounds
-    for step in 0..10_000 {
-        let current_state = LatentState([0.01f32 * (step as f32); STATE_DIM]);
+    for step in 0..1_000 {
+        let current_state = LatentState([control.continuous as f32 * 0.1; STATE_DIM]);
         if state_buffer.push(current_state).is_err() {
             log::error!("[HALT] Static state buffer overflow on step {}", step);
             break;
         }
-
         engine.project_weights(&mut weight_tensor, &sample_gradient, learning_rate);
         let _ = state_buffer.pop();
     }
 
-    log::info!(
-        "[SUCCESS] Zero-allocation execution pipeline completed cleanly with hard bounds enforced."
-    );
+    log::info!("[SUCCESS] Spectral decode + contraction pipeline completed.");
 
     gov_state.audit_sequence += 1;
     if let Err(e) = save_governance_state(&gov_state, &config_path) {

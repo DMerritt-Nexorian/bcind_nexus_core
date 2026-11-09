@@ -1,6 +1,7 @@
 pub mod admissibility;
 pub mod audit;
 pub mod ceal;
+pub mod decoder;
 pub mod dsp;
 pub mod engine;
 pub mod governance;
