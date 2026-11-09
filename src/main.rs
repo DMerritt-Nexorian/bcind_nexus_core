@@ -201,7 +201,7 @@ fn main() {
     // Real multi-channel mock processing path
     log::info!("[PIPELINE] Running mock 32-channel spectral decode loop");
     let fs = 250.0;
-    let mut mock_channels: Vec<Vec<f64>> = (0..CHANNELS)
+    let mock_channels: Vec<Vec<f64>> = (0..CHANNELS)
         .map(|ch| {
             (0..1024)
                 .map(|n| {
