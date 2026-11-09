@@ -69,7 +69,10 @@ mod tests {
         };
         let out = decode_band_powers(&bands);
         assert!(out.continuous < 0.0);
-        assert!(matches!(out.direction, Direction::Left | Direction::Neutral));
+        assert!(matches!(
+            out.direction,
+            Direction::Left | Direction::Neutral
+        ));
     }
 
     #[test]
